@@ -1,7 +1,7 @@
 package org.zhihanli.hw2;
 
-import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Set;
 
 import org.shared.chess.Color;
 import org.shared.chess.GameResult;
@@ -13,6 +13,8 @@ import org.shared.chess.PieceKind;
 import org.shared.chess.Position;
 import org.shared.chess.State;
 import org.shared.chess.StateChanger;
+
+import com.google.appengine.labs.repackaged.com.google.common.collect.Sets;
 
 public class StateChangerImpl implements StateChanger {
 
@@ -225,7 +227,6 @@ public class StateChangerImpl implements StateChanger {
 
 		if (!isCanCastleKingSide && !isCanCastleQueenSide) {
 			if (!(isCanCastleKingSide)) {
-
 				// System.out.println("king side can not castle");
 				return false;
 			}
@@ -272,8 +273,8 @@ public class StateChangerImpl implements StateChanger {
 		if (isKingUnderCheck(tempState, state.getTurn())) {
 			return false;
 		}
-
-		if (isKingUnderCheck(state, state.getTurn())) {
+		tempState = state.copy();
+		if (isKingUnderCheck(tempState, tempState.getTurn())) {
 			// System.out.println("king under check");
 			return false;
 		}
@@ -291,13 +292,11 @@ public class StateChangerImpl implements StateChanger {
 		for (int row = 0; row < state.ROWS; row++) {
 			for (int col = 0; col < state.COLS; col++) {
 				if (canCapture(new Position(row, col), kingPos, state)) {
-
 					return new Position(row, col);
 				}
 			}
 		}
 		return null;
-
 	}
 
 	private boolean canCapture(Position capturer, Position capturee, State state) {
@@ -313,11 +312,8 @@ public class StateChangerImpl implements StateChanger {
 				&& capturer.getRow() == capturee.getRow()) {
 			return false;
 		}
-		Piece piece = state.getPiece(capturer);
 
-		boolean res = false;
-
-		ArrayList<Position> moveList = getMovePosList(state, capturer);
+		Set<Position> moveList = getMovePosSet(state, capturer);
 		Iterator<Position> itr = moveList.iterator();
 		while (itr.hasNext()) {
 			if (itr.next().equals(capturee))
@@ -753,20 +749,20 @@ public class StateChangerImpl implements StateChanger {
 
 			// last check whether check route can be blocked
 			if (!canEscCheck) {
-					for (int i = 0; i < State.ROWS; i++) {
-						for (int j = 0; j < State.COLS; j++) {
-							Piece piece = state.getPiece(i, j);
-							if (piece != null && piece.getColor() == turn
-									&& piece.getKind() != PieceKind.KING) {
-								if (canBlock(state, kingPos, threatPos,
-										new Position(i, j))) {
-									canEscCheck = true;
-									break;
-								}
+				for (int i = 0; i < State.ROWS; i++) {
+					for (int j = 0; j < State.COLS; j++) {
+						Piece piece = state.getPiece(i, j);
+						if (piece != null && piece.getColor() == turn
+								&& piece.getKind() != PieceKind.KING) {
+							if (canBlock(state, kingPos, threatPos,
+									new Position(i, j))) {
+								canEscCheck = true;
+								break;
 							}
 						}
 					}
 				}
+			}
 		} else {
 			return false;
 		}
@@ -846,9 +842,15 @@ public class StateChangerImpl implements StateChanger {
 	 */
 
 	private boolean tryAllMove(State state, Position curPos) {
-		ArrayList<Position> posList = getMovePosList(state, curPos);
-		// try all pos in list
-		Iterator<Position> itr = posList.iterator();
+		Set<Position> posSet = getLegalMovePosSet(state, curPos);
+		return posSet.size() != 0;
+	}
+
+	public void removeIllegalMove(State state, Position curPos,
+			Set<Position> posSet) {
+		if (posSet == null)
+			return;
+		Iterator<Position> itr = posSet.iterator();
 		Piece piece = state.getPiece(curPos);
 
 		while (itr.hasNext()) {
@@ -856,28 +858,95 @@ public class StateChangerImpl implements StateChanger {
 			Position tempPos = itr.next();
 			tempState.setPiece(curPos, null);
 			tempState.setPiece(tempPos, piece);
-			if (!isKingUnderCheck(tempState, tempState.getTurn())) {
-				return true;
+			if (isKingUnderCheck(tempState, tempState.getTurn())) {
+				itr.remove();
 			}
 		}
-
-		return false;
 	}
 
-	private ArrayList<Position> getMovePosList(State state, Position curPos) {
+	public void removeIllegalMoveForKing(State state, Position curPos,
+			Set<Position> posSet) {
+		if (posSet == null)
+			return;
+
+		Iterator<Position> itr = posSet.iterator();
+		Piece piece = state.getPiece(curPos);
+
+		boolean kingSideCastle = false;
+		Position kingSidePos = null, kingSideCastlePos = null, queenSidePos = null, queenSideCastlePos = null;
+		boolean queenSideCastle = false;
+		while (itr.hasNext()) {
+			State tempState = state.copy();
+			Position tempPos = itr.next();
+			if (tempPos.equals(new Position(-1, -1))) {
+				queenSideCastle = true;
+				itr.remove();
+				continue;
+			}
+			if (tempPos.equals(new Position(8, 8))) {
+				kingSideCastle = true;
+				itr.remove();
+				continue;
+			}
+			tempState.setPiece(curPos, null);
+			tempState.setPiece(tempPos, piece);
+			if (isKingUnderCheck(tempState, tempState.getTurn())) {
+				itr.remove();
+			}
+		}
+		itr = posSet.iterator();
+		if (kingSideCastle || queenSideCastle) {
+
+			while (itr.hasNext()) {
+				Position temp = itr.next();
+				if (temp.equals(new Position(curPos.getRow(), 3)))
+					queenSidePos = temp;
+				if (temp.equals(new Position(curPos.getRow(), 5)))
+					kingSidePos = temp;
+				if (temp.equals(new Position(curPos.getRow(), 2)))
+					queenSideCastlePos = temp;
+				if (temp.equals(new Position(curPos.getRow(), 6)))
+					kingSideCastlePos = temp;
+			}
+			if (isKingUnderCheck(state, state.getTurn())) {
+				posSet.remove(queenSideCastlePos);
+				posSet.remove(kingSideCastlePos);
+				return;
+			}
+
+			if (queenSideCastle) {
+				if (queenSidePos == null)
+					posSet.remove(queenSideCastlePos);
+			}
+			if (kingSideCastle) {
+				if (kingSidePos == null)
+					posSet.remove(kingSideCastlePos);
+			}
+		}
+	}
+
+	public Set<Position> getLegalMovePosSet(State state, Position curPos) {
+		Set<Position> posSet = getMovePosSet(state, curPos);
+		removeIllegalMoveForKing(state, curPos, posSet);
+		return posSet;
+	}
+
+	public Set<Position> getMovePosSet(State state, Position curPos) {
+		if (state.getPiece(curPos) == null)
+			return Sets.newHashSet();
 		switch (state.getPiece(curPos).getKind()) {
 		case QUEEN:
-			return getQueenMovePosList(state, curPos);
+			return getQueenMovePosSet(state, curPos);
 		case ROOK:
-			return getRookMovePosList(state, curPos);
+			return getRookMovePosSet(state, curPos);
 		case KING:
-			return getKingMovePosList(state, curPos);
+			return getKingMovePosSet(state, curPos);
 		case PAWN:
-			return getPawnMovePosList(state, curPos);
+			return getPawnMovePosSet(state, curPos);
 		case BISHOP:
-			return getBishopMovePosList(state, curPos);
+			return getBishopMovePosSet(state, curPos);
 		case KNIGHT:
-			return getKnightMovePosList(state, curPos);
+			return getKnightMovePosSet(state, curPos);
 		}
 
 		return null;
@@ -891,7 +960,7 @@ public class StateChangerImpl implements StateChanger {
 	 *            Current queen position
 	 * @return a array list of positions a queen can currently move to
 	 */
-	private ArrayList<Position> getQueenMovePosList(State state, Position curPos) {
+	private Set<Position> getQueenMovePosSet(State state, Position curPos) {
 		if (curPos == null) {
 			return null;
 		}
@@ -901,7 +970,7 @@ public class StateChangerImpl implements StateChanger {
 		}
 
 		Piece queen = state.getPiece(curPos);
-		ArrayList<Position> res = new ArrayList<Position>();
+		Set<Position> res = Sets.newHashSet();
 
 		int row = curPos.getRow();
 		int col = curPos.getCol();
@@ -947,6 +1016,8 @@ public class StateChangerImpl implements StateChanger {
 							res.add(new Position(i, j));
 							break;
 						}
+					} else {
+						res.add(new Position(i, j));
 					}
 					i += moveRow;
 					j += moveCol;
@@ -963,8 +1034,8 @@ public class StateChangerImpl implements StateChanger {
 	 * @param curPos
 	 * @return get possible move to positions of all kinds of pieces
 	 */
-	private ArrayList<Position> getRookMovePosList(State state, Position curPos) {
-		ArrayList<Position> res = new ArrayList<Position>();
+	private Set<Position> getRookMovePosSet(State state, Position curPos) {
+		Set<Position> res = Sets.newHashSet();
 		int row = curPos.getRow();
 		int col = curPos.getCol();
 
@@ -998,8 +1069,8 @@ public class StateChangerImpl implements StateChanger {
 		return res;
 	}
 
-	private ArrayList<Position> getKingMovePosList(State state, Position curPos) {
-		ArrayList<Position> res = new ArrayList<Position>();
+	private Set<Position> getKingMovePosSet(State state, Position curPos) {
+		Set<Position> res = Sets.newHashSet();
 		int row = curPos.getRow();
 		int col = curPos.getCol();
 
@@ -1020,12 +1091,37 @@ public class StateChangerImpl implements StateChanger {
 				res.add(new Position(row + moveRow, col + moveCol));
 			}
 		}
+
+		// add castling pos
+		Piece piece = state.getPiece(curPos);
+		Position queenSide = new Position(curPos.getRow(), 2);
+		Position kingSide = new Position(curPos.getRow(), 6);
+		Position kingSideRook=new Position(curPos.getRow(),7);
+		Position queenSideRook=new Position(curPos.getRow(),0);
+
+		if (state.isCanCastleKingSide(piece.getColor())
+				&& isPathClear(state, curPos, kingSideRook)) {
+			if (!(state.getPiece(kingSide) != null && state.getPiece(kingSide)
+					.getColor() == piece.getColor())) {
+				res.add(kingSide);
+				res.add(new Position(8, 8));
+			}
+		}
+
+		if (state.isCanCastleQueenSide(piece.getColor())
+				&& isPathClear(state, curPos, queenSideRook)) {
+			if (!(state.getPiece(queenSide) != null && state
+					.getPiece(queenSide).getColor() == piece.getColor())) {
+				res.add(queenSide);
+				res.add(new Position(-1, -1));
+			}
+		}
+
 		return res;
 	}
 
-	private ArrayList<Position> getBishopMovePosList(State state,
-			Position curPos) {
-		ArrayList<Position> res = new ArrayList<Position>();
+	private Set<Position> getBishopMovePosSet(State state, Position curPos) {
+		Set<Position> res = Sets.newHashSet();
 		int row = curPos.getRow();
 		int col = curPos.getCol();
 		int moveRow, moveCol;
@@ -1044,6 +1140,8 @@ public class StateChangerImpl implements StateChanger {
 							res.add(new Position(i, j));
 							break;
 						}
+					} else {
+						res.add(new Position(i, j));
 					}
 					i += moveRow;
 					j += moveCol;
@@ -1053,8 +1151,8 @@ public class StateChangerImpl implements StateChanger {
 		return res;
 	}
 
-	private ArrayList<Position> getPawnMovePosList(State state, Position curPos) {
-		ArrayList<Position> res = new ArrayList<Position>();
+	private Set<Position> getPawnMovePosSet(State state, Position curPos) {
+		Set<Position> res = Sets.newHashSet();
 		Color color = state.getPiece(curPos).getColor();
 		int rowOffset = color == Color.BLACK ? -1 : 1;
 		for (int colOffset = -1; colOffset <= 1; colOffset++) {
@@ -1069,6 +1167,16 @@ public class StateChangerImpl implements StateChanger {
 					res.add(new Position(curPos.getRow() + rowOffset, curPos
 							.getCol() + colOffset));
 				}
+
+				Position enpassantPos = state.getEnpassantPosition();
+				if (piece == null && enpassantPos != null) {
+					if (enpassantPos.getRow() == curPos.getRow()
+							&& (enpassantPos.getCol() - curPos.getCol()) == colOffset) {
+						res.add(new Position(curPos.getRow() + rowOffset,
+								curPos.getCol() + colOffset));
+					}
+				}
+
 			}
 			if (colOffset == 0) {
 				if (piece == null) {
@@ -1076,15 +1184,27 @@ public class StateChangerImpl implements StateChanger {
 							.getCol() + colOffset));
 				}
 			}
+		}
 
+		// add initial move to pos
+		int initRow = color == Color.WHITE ? 1 : 6;
+		int initOffset = (color == Color.WHITE) ? 2 : -2;
+		if (curPos.getRow() == initRow) {
+			Position initMove = new Position(curPos.getRow() + initOffset,
+					curPos.getCol());
+			Position initMoveBefore = new Position(curPos.getRow() + initOffset
+					/ 2, curPos.getCol());
+			if (state.getPiece(initMoveBefore) == null
+					&& state.getPiece(initMove) == null) {
+				res.add(initMove);
+			}
 		}
 
 		return res;
 	}
 
-	private ArrayList<Position> getKnightMovePosList(State state,
-			Position curPos) {
-		ArrayList<Position> res = new ArrayList<Position>();
+	private Set<Position> getKnightMovePosSet(State state, Position curPos) {
+		Set<Position> res = Sets.newHashSet();
 		Color color = state.getPiece(curPos).getColor();
 		int row = curPos.getRow();
 		int col = curPos.getCol();
