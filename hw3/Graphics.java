@@ -6,26 +6,19 @@ import static org.shared.chess.Color.*;
 import org.shared.chess.GameResult;
 import org.shared.chess.Piece;
 import org.shared.chess.PieceKind;
-import org.shared.chess.State;
-
-import static org.shared.chess.PieceKind.*;
 import org.zhihanli.hw3.Presenter.View;
 
 import com.google.gwt.core.client.GWT;
-import com.google.gwt.event.dom.client.ClickEvent;
-import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.event.dom.client.HasClickHandlers;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
-import com.google.gwt.uibinder.client.UiHandler;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Element;
-import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.Grid;
 import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.Widget;
-import com.google.gwt.view.client.SelectionChangeEvent;
 
 public class Graphics extends Composite implements View {
 	private static GameImages gameImages = GWT.create(GameImages.class);
@@ -43,11 +36,8 @@ public class Graphics extends Composite implements View {
 	Grid gameGrid;
 	@UiField
 	Grid promotionGrid;
-	@UiField
-	Label gameTurn;
 	private Image[][] board = new Image[8][8];
 	private Image[] promotionBoard = new Image[4];
-	private Presenter presenter;
 
 	public Graphics() {
 		initWidget(uiBinder.createAndBindUi(this));
@@ -64,102 +54,73 @@ public class Graphics extends Composite implements View {
 				if (row % 2 == 0 && col % 2 == 1 || row % 2 == 1
 						&& col % 2 == 0) {
 					image.setResource(gameImages.blackTile());
+
 				} else {
 					image.setResource(gameImages.whiteTile());
 				}
+
 				gameGrid.setWidget(row, col, image);
 			}
 		}
 		gameStatus.setText("Zhihan Li's chess");
-		presenter = new Presenter(this);
+
+		for (int row = 0; row < 4; row++) {
+			final Image image = new Image();
+			promotionBoard[row] = image;
+		}
 
 		promotionGrid.setBorderWidth(0);
 		promotionGrid.resize(4, 1);
 
 	}
 
-	public Presenter getPresenter() {
-		return this.presenter;
+	@Override
+	public HasClickHandlers getCellOnChessBoard(int row, int col) {
+		return board[row][col];
 	}
 
 	@Override
-	public void setPromotionGrid(boolean hiding, Color turn) {
-		if (hiding) {
-			DOM.setStyleAttribute(promotionGrid.getElement(), "visibility",
-					"hidden");
-			return;
-		} else {
-			DOM.setStyleAttribute(promotionGrid.getElement(), "visibility", "");
+	public HasClickHandlers getCellOnPromotionBoard(int row) {
+		return promotionBoard[row];
+	}
 
-		}
-
-		if (turn == WHITE) {
-			final Image i = new Image();
-			i.setResource(gameImages.whiteQueen());
-			promotionBoard[0] = i;
-		} else {
-			final Image i = new Image();
-			i.setResource(gameImages.blackQueen());
-			promotionBoard[0] = i;
-		}
-		if (turn == WHITE) {
-			final Image i = new Image();
-			i.setResource(gameImages.whiteRook());
-			promotionBoard[1] = i;
-		} else {
-			final Image i = new Image();
-			i.setResource(gameImages.blackRook());
-			promotionBoard[1] = i;
-		}
-		if (turn == WHITE) {
-			final Image i = new Image();
-			i.setResource(gameImages.whiteBishop());
-			promotionBoard[2] = i;
-		} else {
-			final Image i = new Image();
-			i.setResource(gameImages.blackBishop());
-			promotionBoard[2] = i;
-		}
-		if (turn == WHITE) {
-			final Image i = new Image();
-			i.setResource(gameImages.whiteKnight());
-			promotionBoard[3] = i;
-		} else {
-			final Image i = new Image();
-			i.setResource(gameImages.blackKnight());
-			promotionBoard[3] = i;
-		}
-		for (int i = 0; i < 4; i++) {
-			promotionGrid.setWidget(i, 0, promotionBoard[i]);
-		}
-		for (int row = 0; row < 4; row++) {
-			final int r = row;
-			Image image = promotionBoard[row];
-			image.addClickHandler(new ClickHandler() {
-				@Override
-				public void onClick(ClickEvent event) {
-					// handle the click event
-					presenter.clickPromotionBoard(r);
-				}
-			});
-		}
+	@Override
+	public void hidePromotionGrid() {
+		DOM.setStyleAttribute(promotionGrid.getElement(), "visibility",
+				"hidden");
 
 	}
 
-	public void addHandler() {
-		for (int row = 0; row < State.ROWS; row++) {
-			for (int col = 0; col < State.COLS; col++) {
-				final int r = row;
-				final int c = col;
-				Image image = board[row][col];
-				image.addClickHandler(new ClickHandler() {
-					@Override
-					public void onClick(ClickEvent event) {
-						// handle the click event
-						presenter.clickBoard(r, c);
-					}
-				});
-			}
+	@Override
+	public void showPromotionGrid() {
+		DOM.setStyleAttribute(promotionGrid.getElement(), "visibility", "");
+	}
+
+	@Override
+	public void setPromotionGrid(Color turn) {
+		if (turn == WHITE) {
+			promotionBoard[0].setResource(gameImages.whiteQueen());
+		} else {
+			promotionBoard[0].setResource(gameImages.blackQueen());
+		}
+		if (turn == WHITE) {
+			promotionBoard[1].setResource(gameImages.whiteRook());
+		} else {
+			promotionBoard[1].setResource(gameImages.blackRook());
+		}
+		if (turn == WHITE) {
+			promotionBoard[2].setResource(gameImages.whiteBishop());
+		} else {
+			promotionBoard[2].setResource(gameImages.blackBishop());
+		}
+		if (turn == WHITE) {
+			promotionBoard[3].setResource(gameImages.whiteKnight());
+
+		} else {
+			promotionBoard[3].setResource(gameImages.blackKnight());
+		}
+		for (int i = 0; i < 4; i++) {
+			promotionGrid.setWidget(i, 0, promotionBoard[i]);
 		}
 	}
 
@@ -167,14 +128,14 @@ public class Graphics extends Composite implements View {
 	public void setPiece(int row, int col, Piece piece) {
 		// TODO
 		Image image = board[row][col];
-		if (piece == null) {
-			if (row % 2 == 0 && col % 2 == 1 || row % 2 == 1 && col % 2 == 0) {
-				image.setResource(gameImages.blackTile());
-			} else {
-				image.setResource(gameImages.whiteTile());
-			}
-			return;
+
+		if (row % 2 == 0 && col % 2 == 1 || row % 2 == 1 && col % 2 == 0) {
+			image.setResource(gameImages.blackTile());
+		} else {
+			image.setResource(gameImages.whiteTile());
 		}
+		if (piece == null)
+			return;
 
 		PieceKind kind = piece.getKind();
 		Color color = piece.getColor();
@@ -223,7 +184,6 @@ public class Graphics extends Composite implements View {
 			}
 			break;
 		}
-
 	}
 
 	@Override
@@ -245,17 +205,13 @@ public class Graphics extends Composite implements View {
 	@Override
 	public void setWhoseTurn(Color color) {
 		// TODO
-		gameTurn.setText(color.toString());
+		gameStatus.setText(color.toString());
 	}
 
 	@Override
 	public void setGameResult(GameResult gameResult) {
 		// TODO
+		if (gameResult != null)
+			gameStatus.setText(gameResult.toString());
 	}
-
-	// @UiHandler("gameGrid")
-	// void handleClick(SelectionChangeEvent<Grid> e) {
-	//
-	// Window.alert("Hello, UiBinder");
-	// }
 }

@@ -12,6 +12,9 @@ import static org.shared.chess.PieceKind.*;
 
 import java.util.ArrayList;
 
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.event.dom.client.HasClickHandlers;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
 import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.user.client.History;
@@ -45,7 +48,14 @@ public class Presenter {
 		 */
 		void setGameResult(GameResult gameResult);
 
-		void setPromotionGrid(boolean hiding, Color turn);
+		void setPromotionGrid(Color turn);
+		
+		HasClickHandlers getCellOnChessBoard(int row,int col);
+		HasClickHandlers getCellOnPromotionBoard(int row);
+		
+		void showPromotionGrid();
+		void hidePromotionGrid();
+		
 	}
 
 	private View view;
@@ -60,7 +70,7 @@ public class Presenter {
 	public Presenter(View view) {
 		setView(view);
 		setState(state);
-		initHistory();
+		bind();
 		stateRecord.add(state.copy());
 		History.newItem("move" + moveCount);
 		moveCount++;
@@ -79,6 +89,51 @@ public class Presenter {
 			}
 		}
 	}
+	
+	public void bind(){
+		for(int row=0;row<State.ROWS;row++){
+			for(int col=0;col<State.COLS;col++){
+				final int r=row;
+				final int c=col;
+				view.getCellOnChessBoard(row, col).addClickHandler(new ClickHandler(){
+					public void onClick(ClickEvent event){
+						clickBoard(r,c);
+					}
+				});
+			}
+		}
+		
+		for(int row=0;row<4;row++){
+			final int r=row;
+			view.getCellOnPromotionBoard(r).addClickHandler(new ClickHandler(){
+				public void onClick(ClickEvent event){
+					clickPromotionBoard(r);
+				}
+			});
+		}
+		
+		History.addValueChangeHandler(new ValueChangeHandler<String>() {
+			public void onValueChange(ValueChangeEvent<String> event) {
+				String historyToken = event.getValue();
+
+				// Parse the history token
+				try {
+					int len=historyToken.length();
+					if (historyToken.substring(0, 4).equals("move")) {
+						String moveIndexToken = historyToken.substring(4, len);
+						int moveIndex = Integer.parseInt(moveIndexToken);
+						setState(stateRecord.get(moveIndex));
+					} else {
+						Window.alert("else");
+						setState(stateRecord.get(moveCount));
+					}
+				} catch (IndexOutOfBoundsException e) {
+					setState(stateRecord.get(0));
+				}
+			}
+		});
+
+	}
 
 	public void clickBoard(int row, int col) {
 		Position newPos = new Position(row, col);
@@ -95,9 +150,8 @@ public class Presenter {
 					false);
 			prevPos = new Position(selectPos.getRow(), selectPos.getCol());
 		}
-
 		selectPos = new Position(row, col);
-		view.setHighlighted(true, row, col, true);
+		view.setHighlighted(true, selectPos.getRow(), selectPos.getCol(), true);
 	}
 
 	public void clickPromotionBoard(int row) {
@@ -118,7 +172,7 @@ public class Presenter {
 		Window.alert(promoteTo.toString());
 		view.setHighlighted(false, row, 0, true);
 		stateChange(new Move(prevPos, selectPos, promoteTo));
-		view.setPromotionGrid(true, BLACK);
+		view.hidePromotionGrid();
 	}
 
 	public Move getMove(Position from, Position to) {
@@ -132,11 +186,11 @@ public class Presenter {
 			} catch (Exception e) {
 				return new Move(from, to, null);
 			}
-			view.setPromotionGrid(false, turn);
+			view.setPromotionGrid(turn);
+			view.showPromotionGrid();
 			return new Move(from, to, null);
 		} else {
-			view.setPromotionGrid(true, turn);
-
+			view.hidePromotionGrid();
 			return new Move(from, to, null);
 		}
 	}
@@ -154,24 +208,4 @@ public class Presenter {
 		moveCount++;
 	}
 
-	public void initHistory() {
-		History.addValueChangeHandler(new ValueChangeHandler<String>() {
-			public void onValueChange(ValueChangeEvent<String> event) {
-				String historyToken = event.getValue();
-
-				// Parse the history token
-				try {
-					if (historyToken.substring(0, 4).equals("move")) {
-						String moveIndexToken = historyToken.substring(4, 5);
-						int moveIndex = Integer.parseInt(moveIndexToken);
-						setState(stateRecord.get(moveIndex));
-					} else {
-						setState(stateRecord.get(moveCount));
-					}
-				} catch (IndexOutOfBoundsException e) {
-					setState(stateRecord.get(0));
-				}
-			}
-		});
-	}
 }
