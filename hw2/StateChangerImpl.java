@@ -3,6 +3,8 @@ package org.zhihanli.hw2;
 import java.util.Iterator;
 import java.util.Set;
 
+import static org.shared.chess.Color.WHITE;
+import static org.shared.chess.Color.BLACK;
 import org.shared.chess.Color;
 import org.shared.chess.GameResult;
 import org.shared.chess.GameResultReason;
@@ -11,10 +13,12 @@ import org.shared.chess.Move;
 import org.shared.chess.Piece;
 import org.shared.chess.PieceKind;
 import org.shared.chess.Position;
+import static org.shared.chess.State.COLS;
+import static org.shared.chess.State.ROWS;
 import org.shared.chess.State;
 import org.shared.chess.StateChanger;
 
-import com.google.appengine.labs.repackaged.com.google.common.collect.Sets;
+import com.google.common.collect.Sets;
 
 public class StateChangerImpl implements StateChanger {
 
@@ -39,7 +43,7 @@ public class StateChangerImpl implements StateChanger {
 			// Wrong player moves!
 			throw new IllegalMove();
 		}
-		// TODO: implement chess logic in HW2.
+		
 
 		// check if go to square out of board
 		if (!onBoard(from.getRow(), from.getCol())
@@ -93,10 +97,10 @@ public class StateChangerImpl implements StateChanger {
 		}
 
 		// switch turn
-		if (state.getTurn() == color.BLACK) {
-			state.setTurn(color.WHITE);
+		if (state.getTurn() == BLACK) {
+			state.setTurn(WHITE);
 		} else {
-			state.setTurn(color.BLACK);
+			state.setTurn(BLACK);
 		}
 
 		// take care of isCanCastle
@@ -289,8 +293,8 @@ public class StateChangerImpl implements StateChanger {
 
 	public Position isKingUnderCheckAndGetThreatenPos(State state, Color turn) {
 		Position kingPos = searchForKing(state, turn);
-		for (int row = 0; row < state.ROWS; row++) {
-			for (int col = 0; col < state.COLS; col++) {
+		for (int row = 0; row < ROWS; row++) {
+			for (int col = 0; col < COLS; col++) {
 				if (canCapture(new Position(row, col), kingPos, state)) {
 					return new Position(row, col);
 				}
@@ -850,24 +854,6 @@ public class StateChangerImpl implements StateChanger {
 			Set<Position> posSet) {
 		if (posSet == null)
 			return;
-		Iterator<Position> itr = posSet.iterator();
-		Piece piece = state.getPiece(curPos);
-
-		while (itr.hasNext()) {
-			State tempState = state.copy();
-			Position tempPos = itr.next();
-			tempState.setPiece(curPos, null);
-			tempState.setPiece(tempPos, piece);
-			if (isKingUnderCheck(tempState, tempState.getTurn())) {
-				itr.remove();
-			}
-		}
-	}
-
-	public void removeIllegalMoveForKing(State state, Position curPos,
-			Set<Position> posSet) {
-		if (posSet == null)
-			return;
 
 		Iterator<Position> itr = posSet.iterator();
 		Piece piece = state.getPiece(curPos);
@@ -927,7 +913,7 @@ public class StateChangerImpl implements StateChanger {
 
 	public Set<Position> getLegalMovePosSet(State state, Position curPos) {
 		Set<Position> posSet = getMovePosSet(state, curPos);
-		removeIllegalMoveForKing(state, curPos, posSet);
+		removeIllegalMove(state, curPos, posSet);
 		return posSet;
 	}
 

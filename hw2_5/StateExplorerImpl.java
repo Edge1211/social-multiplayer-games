@@ -18,11 +18,13 @@ public class StateExplorerImpl implements StateExplorer {
 	public Set<Move> getPossibleMoves(State state) {
 
 		// TODO
-		Set<Move> res=Sets.newHashSet();
-		Set<Position> pos=getPossibleStartPositions(state);
-		Iterator<Position> itr=pos.iterator();
-		while(itr.hasNext()){
-			res.addAll(getPossibleMovesFromPosition(state,itr.next()));
+		Set<Move> res = Sets.newHashSet();
+		if (state.getGameResult() != null)
+			return res;
+		Set<Position> pos = getPossibleStartPositions(state);
+		Iterator<Position> itr = pos.iterator();
+		while (itr.hasNext()) {
+			res.addAll(getPossibleMovesFromPosition(state, itr.next()));
 		}
 
 		return res;
@@ -31,7 +33,10 @@ public class StateExplorerImpl implements StateExplorer {
 	@Override
 	public Set<Move> getPossibleMovesFromPosition(State state, Position start) {
 		// TODO
+
 		Set<Move> res = Sets.newHashSet();
+		if (state.getGameResult() != null)
+			return res;
 		Set<Position> possibleMovePos = stateChanger.getLegalMovePosSet(state,
 				start);
 		Iterator<Position> itr = possibleMovePos.iterator();
@@ -62,6 +67,9 @@ public class StateExplorerImpl implements StateExplorer {
 	public Set<Position> getPossibleStartPositions(State state) {
 		// TODO
 		Set<Position> res = Sets.newHashSet();
+		if (state.getGameResult() != null)
+			return res;
+
 		for (int row = 0; row < State.ROWS; row++) {
 			for (int col = 0; col < State.COLS; col++) {
 				if (state.getPiece(row, col) != null
