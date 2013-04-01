@@ -45,7 +45,9 @@ public interface GameImages extends ClientBundle {
   
   @Source("White R.png")
   ImageResource whiteRook();
-
+  
+  @Source("empty.png")
+  ImageResource empty();
   
   
   

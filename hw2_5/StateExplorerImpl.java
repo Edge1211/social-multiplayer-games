@@ -5,7 +5,7 @@ import org.shared.chess.*;
 import org.zhihanli.hw2.StateChangerImpl;
 import static org.shared.chess.PieceKind.*;
 
-import com.google.appengine.labs.repackaged.com.google.common.collect.Sets;
+import com.google.common.collect.Sets;
 
 public class StateExplorerImpl implements StateExplorer {
 	StateChangerImpl stateChanger;
@@ -23,6 +23,7 @@ public class StateExplorerImpl implements StateExplorer {
 			return res;
 		Set<Position> pos = getPossibleStartPositions(state);
 		Iterator<Position> itr = pos.iterator();
+		//iterate all pieces on board get all possible moves
 		while (itr.hasNext()) {
 			res.addAll(getPossibleMovesFromPosition(state, itr.next()));
 		}
@@ -34,6 +35,7 @@ public class StateExplorerImpl implements StateExplorer {
 	public Set<Move> getPossibleMovesFromPosition(State state, Position start) {
 		// TODO
 
+		//call getLegalMovePosSet from stateChanger
 		Set<Move> res = Sets.newHashSet();
 		if (state.getGameResult() != null)
 			return res;
@@ -65,11 +67,11 @@ public class StateExplorerImpl implements StateExplorer {
 
 	@Override
 	public Set<Position> getPossibleStartPositions(State state) {
-		// TODO
+
 		Set<Position> res = Sets.newHashSet();
 		if (state.getGameResult() != null)
 			return res;
-
+		// iterate all the pieces on board get all possible start positions
 		for (int row = 0; row < State.ROWS; row++) {
 			for (int col = 0; col < State.COLS; col++) {
 				if (state.getPiece(row, col) != null

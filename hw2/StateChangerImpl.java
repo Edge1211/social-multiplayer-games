@@ -43,7 +43,6 @@ public class StateChangerImpl implements StateChanger {
 			// Wrong player moves!
 			throw new IllegalMove();
 		}
-		
 
 		// check if go to square out of board
 		if (!onBoard(from.getRow(), from.getCol())
@@ -112,6 +111,7 @@ public class StateChangerImpl implements StateChanger {
 		checkEndOfGame(state, state.getTurn());
 	}
 
+	//general move 
 	private void move(State state, Move move, PieceKind kind) {
 		switch (kind) {
 		case KING:
@@ -137,6 +137,7 @@ public class StateChangerImpl implements StateChanger {
 		}
 	}
 
+	// take care of isCanCastle 
 	private void setIsCanCastle(State state, PieceKind pieceCaptured,
 			Position piecePos) {
 		Color turn = state.getTurn();
@@ -223,20 +224,17 @@ public class StateChangerImpl implements StateChanger {
 		 * check neither of the pieces involved in castling may have been
 		 * previously moved during the game
 		 */
-		// System.out.println(state.isCanCastleKingSide(piece.getColor()));
-		boolean isCanCastleKingSide = (offset == 2 && state
+			boolean isCanCastleKingSide = (offset == 2 && state
 				.isCanCastleKingSide(piece.getColor()));
 		boolean isCanCastleQueenSide = (offset == -2 && state
 				.isCanCastleQueenSide(piece.getColor()));
 
 		if (!isCanCastleKingSide && !isCanCastleQueenSide) {
 			if (!(isCanCastleKingSide)) {
-				// System.out.println("king side can not castle");
 				return false;
 			}
 
 			if (!(isCanCastleQueenSide)) {
-				// System.out.println("queen side can not castle");
 				return false;
 			}
 		}
@@ -245,7 +243,6 @@ public class StateChangerImpl implements StateChanger {
 		if (offset == 2) {
 			if (state.getPiece(from.getRow(), from.getCol() + 1) != null
 					|| state.getPiece(from.getRow(), from.getCol() + 2) != null) {
-				// System.out.println("piece between");
 				return false;
 			}
 		}
@@ -254,8 +251,7 @@ public class StateChangerImpl implements StateChanger {
 			if (state.getPiece(from.getRow(), from.getCol() - 1) != null
 					|| state.getPiece(from.getRow(), from.getCol() - 2) != null
 					|| state.getPiece(from.getRow(), from.getCol() - 3) != null) {
-				// System.out.println("piece between");
-				return false;
+								return false;
 			}
 		}
 
@@ -279,7 +275,7 @@ public class StateChangerImpl implements StateChanger {
 		}
 		tempState = state.copy();
 		if (isKingUnderCheck(tempState, tempState.getTurn())) {
-			// System.out.println("king under check");
+			
 			return false;
 		}
 
@@ -604,6 +600,7 @@ public class StateChangerImpl implements StateChanger {
 
 	}
 
+	// check whether there is a path between two positions
 	private boolean isPathClear(State state, Position from, Position to) {
 		int row = from.getRow();
 		int col = from.getCol();
@@ -706,9 +703,6 @@ public class StateChangerImpl implements StateChanger {
 				state.getTurn());
 
 		if (threatPos != null) {
-			// System.out.println("threatening " + threatPos.getRow() + " "
-			// + threatPos.getCol());
-			// try moving king to a square not under check
 			for (int colOffset = -1; colOffset < 2; colOffset++) {
 				for (int rowOffset = 1; rowOffset > -2; rowOffset--) {
 					Position to = new Position(kingPos.getRow() + rowOffset,
@@ -723,7 +717,6 @@ public class StateChangerImpl implements StateChanger {
 					temp.setPiece(kingPos, null);
 					temp.setPiece(to, new Piece(turn, PieceKind.KING));
 					if (!isKingUnderCheck(temp, temp.getTurn())) {
-						// System.out.println(to.getRow() + " " + to.getCol());
 						canEscCheck = true;
 						break;
 					}
@@ -733,7 +726,6 @@ public class StateChangerImpl implements StateChanger {
 			// if can not get out of check, check whether can capture
 			// threatening piece
 			if (!canEscCheck) {
-				// System.out.println("can not get out of check");
 				for (int row = 0; row < State.ROWS; row++) {
 					for (int col = 0; col < State.COLS; col++) {
 						Piece piece = state.getPiece(row, col);
@@ -770,7 +762,7 @@ public class StateChangerImpl implements StateChanger {
 		} else {
 			return false;
 		}
-		// System.out.println(canEscCheck);
+		
 		return !canEscCheck;
 	}
 
@@ -850,6 +842,7 @@ public class StateChangerImpl implements StateChanger {
 		return posSet.size() != 0;
 	}
 
+	//remove the illegal move from curPos in posSet
 	public void removeIllegalMove(State state, Position curPos,
 			Set<Position> posSet) {
 		if (posSet == null)
@@ -911,12 +904,14 @@ public class StateChangerImpl implements StateChanger {
 		}
 	}
 
+	//get the legal move from curPos
 	public Set<Position> getLegalMovePosSet(State state, Position curPos) {
 		Set<Position> posSet = getMovePosSet(state, curPos);
 		removeIllegalMove(state, curPos, posSet);
 		return posSet;
 	}
 
+	//get all the possbible move from curPos
 	public Set<Position> getMovePosSet(State state, Position curPos) {
 		if (state.getPiece(curPos) == null)
 			return Sets.newHashSet();
@@ -1082,8 +1077,8 @@ public class StateChangerImpl implements StateChanger {
 		Piece piece = state.getPiece(curPos);
 		Position queenSide = new Position(curPos.getRow(), 2);
 		Position kingSide = new Position(curPos.getRow(), 6);
-		Position kingSideRook=new Position(curPos.getRow(),7);
-		Position queenSideRook=new Position(curPos.getRow(),0);
+		Position kingSideRook = new Position(curPos.getRow(), 7);
+		Position queenSideRook = new Position(curPos.getRow(), 0);
 
 		if (state.isCanCastleKingSide(piece.getColor())
 				&& isPathClear(state, curPos, kingSideRook)) {

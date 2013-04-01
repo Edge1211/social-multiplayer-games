@@ -1,41 +1,91 @@
 <!DOCTYPE ui:UiBinder SYSTEM "http://dl.google.com/gwt/DTD/xhtml.ent">
 <ui:UiBinder xmlns:ui="urn:ui:com.google.gwt.uibinder"
-	xmlns:g="urn:import:com.google.gwt.user.client.ui">
+	xmlns:g="urn:import:com.google.gwt.user.client.ui" xmlns:c="urn:import:com.google.gwt.user.cellview.client">
+	<ui:image field="background" src="background.png" />
 	<ui:style field="css" type="org.zhihanli.hw3.GameCss">
 		.highlighted {
-			outline: dotted green 2px;
+			outline: dotted blue 3px;
+		}
+		
+		.grid {
+			margin-top: 20px;
+			margin-left: 20px;
+			border-spacing: 0px;
+			border-collapse: collapse;
 		}
 		
 		td img {
 			display: block
 		}
 		
-		.imgbot {
-			position: relative;
-			z-index: 0;
-		}
-		
 		.center {
 			margin-left: auto;
 			margin-right: auto;
 		}
+		
+		@sprite .board {
+			gwt-image: "background";
+		}
+		
+		.gwt-ListBox {
+			
+		}
 	</ui:style>
+
 	<g:HTMLPanel>
 		<Table align="center">
 			<tr>
+				<td></td>
 				<td>
 					<g:Label ui:field="gameStatus" />
 				</td>
+				<td>
+					<g:Label ui:field="playersInfo" />
+				</td>
+			</tr>
+
+			<tr>
+				<td style="width:55px">
+					<g:Grid ui:field="promotionGrid" />
+				</td>
+				<td>
+					<div class="{css.board}">
+						<g:Grid ui:field="gameGrid" styleName="{css.grid}" />
+					</div>
+				</td>
+
+				<td>
+					<g:Button ui:field="restart"></g:Button>
+					<br></br>
+					<g:Button ui:field="save"></g:Button>
+					<br></br>
+					<g:Button ui:field="load"></g:Button>
+					<br></br>
+					<g:Button ui:field="clearAll"></g:Button>
+					<br></br>
+					<g:Button ui:field="delete"></g:Button>
+					<p> Select a game record to load:</p>
+					<g:ListBox ui:field="saveList" />
+					<br></br>
+				</td>
+			</tr>
+
+
+			<tr>
+				<td>
+					<g:Button ui:field="match"></g:Button>
+				</td>
+
+			</tr>
+		</Table>
+
+		<Table>
+			<tr>
 
 			</tr>
 			<tr>
-				<td>
-					<g:Grid ui:field="gameGrid" />
-				</td>
-				<td>
-					<g:Grid ui:field="promotionGrid" />
-				</td>
 			</tr>
+
 		</Table>
 	</g:HTMLPanel>
 </ui:UiBinder> 
