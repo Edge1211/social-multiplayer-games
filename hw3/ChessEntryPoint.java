@@ -1,6 +1,5 @@
 package org.zhihanli.hw3;
 
-import org.shared.chess.State;
 import org.zhihanli.hw3.Graphics;
 import org.zhihanli.hw3.Presenter;
 
@@ -24,19 +23,19 @@ public class ChessEntryPoint implements EntryPoint {
 //			presenter.setState(new State());
 		}
 
-		final Presenter p = presenter;
+//		final Presenter p = presenter;
 		History.addValueChangeHandler(new ValueChangeHandler<String>() {
 			public void onValueChange(ValueChangeEvent<String> event) {
 				String historyToken = event.getValue();
 
 				// Parse the history token
 				if (historyToken != null) {
-					String stateToken = historyToken;
-					p.reset();
-					p.setState(p.deserialize(stateToken));
+//					String stateToken = historyToken;
+//					p.reset();
+//					p.setState(p.deserialize(stateToken));
 				} else {
-					p.reset();
-					p.setState(new State());
+//					p.reset();
+//					p.setState(new State());
 				}
 			}
 		});

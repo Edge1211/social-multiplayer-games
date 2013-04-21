@@ -13,6 +13,7 @@ import org.zhihanli.hw3.Presenter.View;
 import org.zhihanli.hw5.AudioControl;
 import org.zhihanli.hw5.CellWithAnimation;
 import org.zhihanli.hw5.Situation;
+import org.zhihanli.hw8.GameMessages;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.HasChangeHandlers;
@@ -27,11 +28,13 @@ import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.Timer;
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.Grid;
 import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ListBox;
+import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Widget;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.History;
@@ -67,8 +70,22 @@ public class Graphics extends Composite implements View {
 	Grid gameGrid;
 	@UiField
 	Grid promotionGrid;
+//	@UiField
+//	ListBox saveList;
 	@UiField
-	ListBox saveList;
+	Button disconnect;
+	@UiField
+	ListBox matchList;
+	@UiField
+	TextBox emailInput;
+	@UiField
+	Button newMatch;
+	@UiField
+	Button deleteMatch;
+	@UiField
+	Label currentPlayer;
+	@UiField
+	Label rank;
 
 	public @UiFactory
 	ListBox makeMultipleListBox() {
@@ -79,6 +96,7 @@ public class Graphics extends Composite implements View {
 	private Image[] promotionBoard = new Image[4];
 
 	private Timer timer = null;
+	GameMessages messages = (GameMessages) GWT.create(GameMessages.class);
 
 	public Graphics() {
 		initWidget(uiBinder.createAndBindUi(this));
@@ -92,11 +110,26 @@ public class Graphics extends Composite implements View {
 		save.setText("Save game");
 		load.setText("Load game");
 		clearAll.setText("Delete all saved games");
-		delete.setText("Delete selected record");
-		match.setText("Auto match to play");
 
-		saveList.setVisibleItemCount(8);
-		saveList.setWidth("150px");
+		// delete.setText(messages.setDeleteMatchLabel());
+		match.setText(messages.setAutoMatchLabel());
+		disconnect.setText("close connection");
+		disconnect.setVisible(false);
+
+		
+
+		emailInput.setWidth("150px");
+		matchList.setVisibleItemCount(1);
+		newMatch.setText(messages.setStartGameLabel());
+		deleteMatch.setText(messages.setDeleteMatchLabel());
+		// matchList.setWidth("1000px");
+
+		restart.setVisible(false);
+		load.setVisible(false);
+//		saveList.setVisible(false);
+		save.setVisible(false);
+		clearAll.setVisible(false);
+		delete.setVisible(false);
 
 		for (int row = 0; row < 8; row++) {
 			for (int col = 0; col < 8; col++) {
@@ -125,6 +158,18 @@ public class Graphics extends Composite implements View {
 	}
 
 	@Override
+	public HasClickHandlers getDisconnectButton() {
+
+		return disconnect;
+	}
+
+	@Override
+	public HasClickHandlers getNewMatchButton() {
+
+		return newMatch;
+	}
+
+	@Override
 	public HasClickHandlers getCellOnChessBoard(int row, int col) {
 		return board[7 - row][col];
 	}
@@ -144,22 +189,52 @@ public class Graphics extends Composite implements View {
 		return getCell(row, col);
 	}
 
+//	@Override
+//	public HasChangeHandlers getSaveList() {
+//		return saveList;
+//	}
+
 	@Override
-	public HasChangeHandlers getSaveList() {
-		return saveList;
+	public HasChangeHandlers getMatchList() {
+		return matchList;
 	}
 
 	@Override
-	public void setSaveList(String save) {
-		saveList.addItem(save);
+	public HasClickHandlers getDeleteMatchButton() {
+		return deleteMatch;
+	}
+
+//	@Override
+//	public void setSaveList(String save) {
+//		saveList.addItem(save);
+
+//	}
+
+	@Override
+	public void setMatchList(String match) {
+		matchList.addItem(match);
+		matchList.setVisibleItemCount(1);
 	}
 
 	@Override
-	public String getSelection() {
-		int idx = saveList.getSelectedIndex();
+	public void clearMatchList() {
+		matchList.clear();
+	}
+
+//	@Override
+//	public String getSelection() {
+//		int idx = saveList.getSelectedIndex();
+//		if (idx == -1)
+//			return null;
+//		return saveList.getItemText(idx);
+//	}
+
+	@Override
+	public String getSelectionFromMatchList() {
+		int idx = matchList.getSelectedIndex();
 		if (idx == -1)
 			return null;
-		return saveList.getItemText(idx);
+		return matchList.getItemText(idx);
 	}
 
 	public Image getCell(int row, int col) {
@@ -190,10 +265,10 @@ public class Graphics extends Composite implements View {
 		return restart;
 	}
 
-	@Override
-	public HasClickHandlers getSaveButton() {
-		return save;
-	}
+//	@Override
+//	public HasClickHandlers getSaveButton() {
+//		return save;
+//	}
 
 	@Override
 	public HasClickHandlers getLoadButton() {
@@ -210,10 +285,10 @@ public class Graphics extends Composite implements View {
 		return delete;
 	}
 
-	@Override
-	public void clearSaveList() {
-		saveList.clear();
-	}
+//	@Override
+//	public void clearSaveList() {
+//		saveList.clear();
+//	}
 
 	@Override
 	public void setTimer(Timer timer) {
@@ -229,7 +304,6 @@ public class Graphics extends Composite implements View {
 	public void hidePromotionGrid() {
 		DOM.setStyleAttribute(promotionGrid.getElement(), "visibility",
 				"hidden");
-
 	}
 
 	@Override
@@ -267,7 +341,7 @@ public class Graphics extends Composite implements View {
 
 	@Override
 	public void setPiece(int row, int col, Piece piece) {
-		// TODO
+
 		Image image = board[7 - row][col];
 
 		if (piece == null) {
@@ -343,23 +417,47 @@ public class Graphics extends Composite implements View {
 
 	@Override
 	public void setWhoseTurn(Color color) {
-		// TODO
+
 		if (color == null) {
-			gameStatus.setText("Waiting to play..");
+			gameStatus.setText(messages.setWaitingStatus());
 		} else {
-			String turn = color == WHITE ? "White" : "Black";
-			gameStatus.setText(turn + " to move");
+			String turn = color == WHITE ? messages.colorWhite() : messages
+					.colorBlack();
+			gameStatus.setText(turn + messages.toPlay());
 		}
 	}
 
 	@Override
 	public void setGameResult(GameResult gameResult) {
-		// TODO
+
 		if (gameResult != null) {
-			String winner = gameResult.getWinner() == WHITE ? "White" : "BLACK";
-			String reason = gameResult.getGameResultReason().toString();
-			gameStatus.setText("Game end. Winner: " + winner + " Reason: "
-					+ reason);
+
+			String winner = gameResult.getWinner() == WHITE ? messages
+					.colorWhite() : messages.colorBlack();
+			// Window.alert(gameResult.getWinner().toString() + " " +
+			// winner+" in set");
+			String reason = null;
+			switch (gameResult.getGameResultReason()) {
+			case CHECKMATE:
+				reason = messages.checkMate();
+				break;
+
+			case FIFTY_MOVE_RULE:
+				reason = messages.fiftyMoveRule();
+				break;
+			case THREEFOLD_REPETITION_RULE:
+				reason = messages.threeFoldRepetitionRule();
+				break;
+			case STALEMATE:
+				reason = messages.stalemate();
+				break;
+
+			}
+			if (gameResult.getWinner() == null)
+				gameStatus.setText(messages.gameEnd() + " " + reason);
+			else
+				gameStatus.setText(messages.gameEnd() + " " + winner + " "
+						+ messages.win() + " " + reason);
 		}
 	}
 
@@ -403,4 +501,32 @@ public class Graphics extends Composite implements View {
 			audio.play();
 	}
 
+	@Override
+	public String getEmailInput() {
+		return emailInput.getText();
+	}
+
+	@Override
+	public void setButtons(boolean visible) {
+		match.setVisible(visible);
+		// disconnect.setVisible(visible);
+		matchList.setVisible(visible);
+
+		emailInput.setVisible(visible);
+		newMatch.setVisible(visible);
+
+		deleteMatch.setVisible(visible);
+
+	}
+
+	@Override
+	public void setCurrentPlayer(String player) {
+		currentPlayer.setText(player);
+	}
+
+	@Override
+	public void setRank(String rankRange) {
+		rank.setText(rankRange);
+		// rank.setText("sldakf");
+	}
 }

@@ -1,5 +1,7 @@
 package org.zhihanli.hw6.client;
 
+import java.util.List;
+
 import com.google.gwt.user.client.rpc.RemoteService;
 import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
 
@@ -8,9 +10,17 @@ public interface ChessService extends RemoteService {
 
 	boolean sendMove(String move, String userid);
 
-	String login(String userid);
+	String login();
 	
-	String askForGoogleUserid(String userid);
+	boolean autoMatch(String userid);
 	
-	boolean autoMatch();
+	void sendNewMatch(String p1Email,String p2Email);
+	
+	List<String> requestMatchList(String userid);
+	
+	String getStateAndTurnAndPlayerInfoWithMatchId(Long matchId);
+	
+	void deleteMatchFromPlayer(String email, Long matchId);
+	
+	String getWaitingList();
 }

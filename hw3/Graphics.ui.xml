@@ -23,24 +23,26 @@
 			margin-right: auto;
 		}
 		
+		.gwt-ListBox { }
+		
 		@sprite .board {
 			gwt-image: "background";
-		}
-		
-		.gwt-ListBox {
-			
 		}
 	</ui:style>
 
 	<g:HTMLPanel>
-		<Table align="center">
+		<Table>
 			<tr>
 				<td></td>
 				<td>
 					<g:Label ui:field="gameStatus" />
 				</td>
 				<td>
-					<g:Label ui:field="playersInfo" />
+					<g:Label ui:field="currentPlayer" />
+					<g:Label ui:field="rank"></g:Label>
+
+
+
 				</td>
 			</tr>
 
@@ -55,6 +57,24 @@
 				</td>
 
 				<td>
+					<g:Label ui:field="playersInfo"></g:Label>
+					<br></br>
+					<g:Button ui:field="match"></g:Button>
+					<br></br>
+					<g:Button ui:field="disconnect"></g:Button>
+					<br></br>
+					<br></br>
+					<g:Button ui:field="deleteMatch"></g:Button>
+					<br></br>
+					<g:TextBox ui:field="emailInput"></g:TextBox>
+
+					<g:Button ui:field="newMatch"></g:Button>
+					<br></br>
+
+
+				</td>
+
+				<td>
 					<g:Button ui:field="restart"></g:Button>
 					<br></br>
 					<g:Button ui:field="save"></g:Button>
@@ -64,28 +84,16 @@
 					<g:Button ui:field="clearAll"></g:Button>
 					<br></br>
 					<g:Button ui:field="delete"></g:Button>
-					<p> Select a game record to load:</p>
 					<g:ListBox ui:field="saveList" />
 					<br></br>
 				</td>
 			</tr>
-
-
-			<tr>
-				<td>
-					<g:Button ui:field="match"></g:Button>
-				</td>
-
-			</tr>
 		</Table>
+		<div align="center">
+			<g:ListBox ui:field="matchList">
+			</g:ListBox>
+		</div>
 
-		<Table>
-			<tr>
-
-			</tr>
-			<tr>
-			</tr>
-
-		</Table>
 	</g:HTMLPanel>
+
 </ui:UiBinder> 

@@ -4,6 +4,7 @@ import org.zhihanli.hw5.Situation;
 import static org.zhihanli.hw5.Situation.*;
 
 import org.zhihanli.hw6.client.ChessClient;
+import org.zhihanli.hw6.client.MoveSerializer;
 import org.shared.chess.Color;
 import static org.shared.chess.Color.*;
 
@@ -17,6 +18,7 @@ import static org.shared.chess.GameResultReason.*;
 import static org.shared.chess.PieceKind.*;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 
 import com.google.gwt.event.dom.client.ChangeEvent;
@@ -82,19 +84,31 @@ public class Presenter {
 
 		HasClickHandlers getRestartButton();
 
-		HasClickHandlers getSaveButton();
+		// HasClickHandlers getSaveButton();
 
 		HasClickHandlers getLoadButton();
 
-		HasChangeHandlers getSaveList();
+		// HasChangeHandlers getSaveList();
+
+		HasChangeHandlers getMatchList();
 
 		HasClickHandlers getClearAllButton();
 
 		HasClickHandlers getDeleteButton();
-		
+
 		HasClickHandlers getAutoMatchButton();
 
-		String getSelection();
+		HasClickHandlers getDisconnectButton();
+
+		HasClickHandlers getNewMatchButton();
+
+		HasClickHandlers getDeleteMatchButton();
+
+//		String getSelection();
+
+		String getSelectionFromMatchList();
+
+		String getEmailInput();
 
 		void showPromotionGrid();
 
@@ -107,11 +121,15 @@ public class Presenter {
 
 		void setDraggable(int row, int col, boolean dragable);
 
-		void setSaveList(String save);
+		// void setSaveList(String save);
+
+		void setMatchList(String match);
 
 		void setPlayersInfo(String info);
 
-		void clearSaveList();
+		// void clearSaveList();
+
+		void clearMatchList();
 
 		void addHistoryItem(String record);
 
@@ -120,6 +138,12 @@ public class Presenter {
 		void setTimer(Timer timer);
 
 		Timer getTimer();
+
+		void setButtons(boolean visible);
+
+		void setCurrentPlayer(String player);
+
+		void setRank(String rankRange);
 	}
 
 	private View view;
@@ -161,9 +185,10 @@ public class Presenter {
 	public void init(View view) {
 		setView(view);
 		bind();
-		updateSaveList();
+		// updateSaveList();
 
 		chessClient.login();
+		checkConnection();
 	}
 
 	public void setWaitingStatus() {
@@ -178,15 +203,32 @@ public class Presenter {
 	/**
 	 * update the saved games list, due to storage change
 	 */
-	public void updateSaveList() {
-		view.clearSaveList();
-		Storage storage = Storage.getLocalStorageIfSupported();
-		if (storage != null) {
-			for (int i = 0; i < storage.getLength(); i++) {
-				view.setSaveList(storage.key(i));
+	// public void updateSaveList() {
+	// view.clearSaveList();
+	// Storage storage = Storage.getLocalStorageIfSupported();
+	// if (storage != null) {
+	// for (int i = 0; i < storage.getLength(); i++) {
+	// view.setSaveList(storage.key(i));
+	// }
+	// }
+
+	// }
+
+	public void setButtons(boolean visible) {
+		view.setButtons(visible);
+	}
+
+	public void updateMatchList(List<String> matchList) {
+		if (matchList != null) {
+			view.clearMatchList();
+			for (String s : matchList) {
+				view.setMatchList(s);
 			}
 		}
+	}
 
+	public void addMatch(String match) {
+		view.setMatchList(match);
 	}
 
 	public void setView(View view) {
@@ -206,7 +248,16 @@ public class Presenter {
 				view.setHighlighted(true, r, c, false);
 			}
 		}
-		view.addHistoryItem(serialize(state));
+		// view.addHistoryItem(serialize(state));
+	}
+
+	public void clearBoard() {
+		for (int r = 0; r < 8; r++) {
+			for (int c = 0; c < 8; c++) {
+				view.setPiece(r, c, null);
+				view.setHighlighted(true, r, c, false);
+			}
+		}
 	}
 
 	/**
@@ -223,7 +274,7 @@ public class Presenter {
 	/**
 	 * function to do animations for chess move
 	 */
-	private void moveAnimation() {
+	private void moveAnimation(Move move) {
 		if (move == null)
 			return;
 		Position from = move.getFrom();
@@ -321,36 +372,30 @@ public class Presenter {
 							}
 						});
 
-				view.getClearAllButton().addClickHandler(new ClickHandler() {
-					public void onClick(ClickEvent event) {
-						Storage storage = Storage.getLocalStorageIfSupported();
-						if (storage != null) {
-							storage.clear();
-							view.clearSaveList();
-						}
-					}
-				});
+				// view.getClearAllButton().addClickHandler(new ClickHandler() {
+				// public void onClick(ClickEvent event) {
+				// Storage storage = Storage.getLocalStorageIfSupported();
+				// if (storage != null) {
+				// storage.clear();
+				// view.clearSaveList();
+				// }
+				// }
+				// });
 
-				view.getDeleteButton().addClickHandler(new ClickHandler() {
-					public void onClick(ClickEvent event) {
-						if (load != null) {
-							Storage storage = Storage
-									.getLocalStorageIfSupported();
-							if (storage != null) {
-								storage.removeItem(load);
-								updateSaveList();
-							}
+				// view.getDeleteButton().addClickHandler(new ClickHandler() {
+				// public void onClick(ClickEvent event) {
+				// if (load != null) {
+				// Storage storage = Storage
+				// .getLocalStorageIfSupported();
+				// if (storage != null) {
+				// storage.removeItem(load);
+				// updateSaveList();
+				// }
 
-						}
-					}
-				});
-				
-				view.getAutoMatchButton().addClickHandler(new ClickHandler(){
-					@Override
-					public void onClick(ClickEvent event){
-						chessClient.sendAutoMatchRequest();
-					}
-				});
+				// }
+				// }
+				// });
+
 			}
 		}
 
@@ -373,11 +418,11 @@ public class Presenter {
 		});
 
 		// bind handler to save button
-		view.getSaveButton().addClickHandler(new ClickHandler() {
-			public void onClick(ClickEvent event) {
-				save();
-			}
-		});
+		// view.getSaveButton().addClickHandler(new ClickHandler() {
+		// public void onClick(ClickEvent event) {
+		// save();
+		// }
+		// });
 
 		// bind handler to load button
 		view.getLoadButton().addClickHandler(new ClickHandler() {
@@ -387,15 +432,66 @@ public class Presenter {
 		});
 
 		// bind handler to save button
-		view.getSaveList().addChangeHandler(new ChangeHandler() {
+		// view.getSaveList().addChangeHandler(new ChangeHandler() {
+		// public void onChange(ChangeEvent event) {
+		// load = view.getSelection();
+		// }
+		// });
+
+		view.getMatchList().addChangeHandler(new ChangeHandler() {
 			public void onChange(ChangeEvent event) {
-				load = view.getSelection();
+				// TODO: HANDLER
+				String match = view.getSelectionFromMatchList();
+				String id = match.split(" ")[2];
+				// send id to server
+				chessClient.loadStateWithMatchId(new Long(id), false);
+
+			}
+		});
+
+		view.getNewMatchButton().addClickHandler(new ClickHandler() {
+
+			public void onClick(ClickEvent event) {
+				if (view.getEmailInput() != null) {
+					chessClient.sendNewMatch(view.getEmailInput(),
+							chessClient.getEmail());
+				}
 			}
 		});
 
 		view.setTimer(new Timer() {
 			public void run() {
 				setState(state);
+			}
+		});
+
+		view.getAutoMatchButton().addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				setWaitingStatus();
+				clearBoard();
+
+				chessClient.sendAutoMatchRequest();
+			}
+		});
+
+		view.getDisconnectButton().addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				chessClient.closeSocket();
+			}
+		});
+
+		view.getDeleteMatchButton().addClickHandler(new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				String match = view.getSelectionFromMatchList();
+				String id = match.split(" ")[2];
+				clearBoard();
+				setWaitingStatus();
+				// delete selected match from current player's list
+				chessClient.deleteMatchFromPlayer(chessClient.getEmail(),
+						new Long(id));
 			}
 		});
 
@@ -601,13 +697,14 @@ public class Presenter {
 				setState(state);
 			}
 
-			moveAnimation();
+			moveAnimation(move);
 		} else {
 			setState(state);
 		}
 
 		if (isMyMove) {
-			chessClient.sendMoveToServer(move);
+			String time = saveMove(move);
+			chessClient.sendMoveToServer(move, time, false);
 			isMyTurn = false;
 			// chessClient.login();
 			// if (token != null)
@@ -636,7 +733,7 @@ public class Presenter {
 			save = dtf.format(date, TimeZone.createTimeZone(0));
 			storage.setItem(save, serialize(state));
 		}
-		view.setSaveList(save);
+//		view.setSaveList(save);
 	}
 
 	/**
@@ -801,4 +898,61 @@ public class Presenter {
 		return null;
 
 	}
+
+	public void setCurrentPlayer(String player) {
+		view.setCurrentPlayer(player);
+	}
+
+	public void setRank(String rankRange) {
+		view.setRank(rankRange);
+	}
+
+	private String saveMove(Move move) {
+
+		Storage storage = Storage.getLocalStorageIfSupported();
+		if (storage == null) {
+			Window.alert("Sorry, your browser doesn't support local storage");
+			return null;
+		} else {
+			Date date = new Date();
+			DateTimeFormat dtf = DateTimeFormat.getFormat("yyyyMMddHHmmss");
+			String time = dtf.format(date, TimeZone.createTimeZone(0));
+			storage.setItem(time, MoveSerializer.moveToString(move));
+			return time;
+		}
+	}
+
+	public void deleteMove(String time) {
+		Storage storage = Storage.getLocalStorageIfSupported();
+		if (storage != null) {
+			storage.removeItem(time);
+		}
+	}
+
+	public void checkConnection() {
+		Timer timer = new Timer() {
+			public void run() {
+				/**
+				 * check if there is any move in local storage
+				 */
+				Storage storage = Storage.getLocalStorageIfSupported();
+				if (storage != null) {
+					if (storage.getLength() > 0) {
+						String moveString = storage.getItem(storage.key(0));
+						chessClient.sendMoveToServer(
+								MoveSerializer.stringToMove(moveString),
+								storage.key(0), true);
+						chessClient.refreshCurrentState();
+
+					}
+
+				}
+
+			}
+		};
+
+		timer.scheduleRepeating(10000);
+
+	}
+
 }
